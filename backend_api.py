@@ -79,8 +79,22 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         vo.append(VideoStorage(path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
     return vo
 
+def parse_video_transcription(video: VideoStorage) -> str:
+    """Parse the video's transcription using an audio model."""
+    return "This is the transcription of the video."
+
+def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresentation:
+    """Parse the video's transcription and other attributes to generate a summary.
+    
+    This function will set the transcription attribute as well.
+    """
+    pass
+
 def store_video_representation(video: VideoStorage) -> None:
     """Parse video representation and store it in the database."""
+    transcription = parse_video_transcription(video)
+    video_presentation = parse_video_summary(video, transcription)
+    # store the video_presentation in the database
     pass
 
 def retrieve_videos_by_similarity(q: str) -> List[VideoPresentation]:
