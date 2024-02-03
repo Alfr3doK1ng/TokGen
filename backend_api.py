@@ -4,6 +4,8 @@ import time
 from dotenv import load_dotenv
 import os
 from apify_client import ApifyClient
+import tempfile
+from utils.audio import extract_audio_from_video, transcribe_audio
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
@@ -81,10 +83,16 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
 
 def parse_video_transcription(video: VideoStorage) -> str:
     """Parse the video's transcription using an audio model."""
-    return "This is the transcription of the video."
+    with tempfile.TemporaryDirectory() as temp_dir:
+        audio_file = os.path.join(temp_dir, "audio.mp3")
+        # convert to audio file
+        extract_audio_from_video(video.path, audio_file)
+        # transcribe the audio
+        transcription = transcribe_audio(audio_file)
+    return transcription
 
 def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresentation:
-    """Parse the video's transcription and other attributes to generate a summary.
+    """Parse the video's keyframes and other attributes to generate a summary.
     
     This function will set the transcription attribute as well.
     """
