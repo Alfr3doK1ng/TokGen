@@ -60,6 +60,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
     # Fetch and print Actor results from the run's dataset (if there are any)
     vo = []
     for item in client.dataset(run["defaultDatasetId"]).iterate_items():
+        item = item['aweme_info']
         path = ""  # Assuming you have a specific logic to define the path
         url = item["video"]["play_addr"]["url_list"][0]
         view_count = item["statistics"]["play_count"]
@@ -76,7 +77,6 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
 
         # Creating a VideoStorage object with extracted values
         vo.append(VideoStorage(path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
-
     return vo
 
 def store_video_representation(video: VideoStorage) -> None:
