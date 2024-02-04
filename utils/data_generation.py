@@ -104,15 +104,19 @@ def loading_fetching(output_folder):
     ).load_data()
 
     for img_doc in google_image_documents:
-        pydantic_response = pydantic_gemini(
-            "models/gemini-pro-vision",
-            TickTokVids,
-            [img_doc],
-            prompt,
-        )
-        for r in pydantic_response:
-            print(r)
-        results.append(pydantic_response)
+        try:
+            pydantic_response = pydantic_gemini(
+                "models/gemini-pro-vision",
+                TickTokVids,
+                [img_doc],
+                prompt,
+            )
+            for r in pydantic_response:
+                print(r)
+            results.append(pydantic_response)
+        except Exception as e:
+            print(f"Error: {e}")
+            results.append("Error: Unable to process the image.")
         
     return results
 
