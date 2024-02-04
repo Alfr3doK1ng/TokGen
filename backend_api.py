@@ -8,6 +8,7 @@ import tempfile
 from utils.audio import extract_audio_from_video, transcribe_audio
 import requests
 from pathlib import Path
+from data_generation import capture_featured_frames, summarize
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
@@ -21,7 +22,7 @@ class VideoStorage:
     path: str
     url: str
     view: int
-    digg_count: int
+    # digg_count: int
     collect_count: int
     comment_count: int
     digg_count: int
@@ -39,7 +40,8 @@ class VideoPresentation:
     # simple attributes
     path: str
     # attributes from the parse, such as captions, transciptions, storyline summary, etc
-    caption: str
+    transcript: str
+    summary: str
 
 @dataclass
 class QueryResponse:
@@ -122,6 +124,11 @@ def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresent
     
     This function will set the transcription attribute as well.
     """
+    print(video.path)
+    capture_featured_frames(video.path, num_frames=5)
+    summary = summarize()
+
+    return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
     pass
 
 def store_video_representation(video: VideoStorage) -> None:
@@ -129,6 +136,7 @@ def store_video_representation(video: VideoStorage) -> None:
     transcription = parse_video_transcription(video)
     video_presentation = parse_video_summary(video, transcription)
     # store the video_presentation in the database
+    
     pass
 
 def retrieve_videos_by_similarity(q: str) -> List[VideoPresentation]:
