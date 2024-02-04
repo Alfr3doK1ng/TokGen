@@ -112,6 +112,7 @@ def testing():
 
 
     st.title("Chat with TokGen 💬🎵")
+    st.write("Tell me your niche (sports, dance, comedy, fashion, etc).")
     if st.button("Back to Home"):
         st.session_state.page = "home"
         st.rerun()
