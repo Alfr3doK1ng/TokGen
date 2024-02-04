@@ -139,11 +139,6 @@ def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> 
         print(f"An error occurred while calling the OpenAI API: {e}")
         return "We encountered an error while generating a response to your query."
 
-# Example usage (Remember to replace 'your_openai_api_key' with your actual OpenAI API key)
-# videos = [VideoPresentation(path="video1.mp4", transcript="Transcript 1", summary="Summary 1"), VideoPresentation(path="video2.mp4", transcript="Transcript 2", summary="Summary 2")]
-# response = generate_response_for_retrieval("Query about videos", videos, "your_openai_api_key")
-# print(response)
-
 def query(q: str) -> QueryResponse:
     """Retrieve related trending videos and generate a response to the user's query."""
     # search for the hottest videos related to the query on tiktok
