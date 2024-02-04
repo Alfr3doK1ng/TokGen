@@ -11,6 +11,7 @@ from pathlib import Path
 from utils.data_generation import capture_featured_frames, summarize
 from utils.retrieval_storage import LlamaIndexQdrantStorage
 from typedefs import VideoStorage, VideoPresentation, QueryResponse
+import openai
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
@@ -113,8 +114,37 @@ def retrieve_videos_by_similarity(q: str, videos: List[VideoPresentation], top_k
 
 def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> str:
     """Generate a response to the user's query based on the retrieved videos."""
-    time.sleep(10)
-    return "Here are the trends."
+    # Join the summaries of all videos to form the input text for the API
+    input_text = f"Imagine you are a consultant, you are giving the tiktok \
+        content creaters ideas about their next videos. Here are some current trending\
+        video summaries. The content creator is interested in {q}.\
+        Based on these summary and the need from content creator, generate a new idea for the content\
+        creater. be specific about what to do in each frame; what to wear; provide a\
+        transcript for them. Be as specific as possible."
+        
+    input_text += "\n".join([f"- {video.summary}" for video in videos])
+    
+    openai.api_key = openai_api_key
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=input_text,
+            temperature=0.7,
+            max_tokens=150,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0
+        )
+        generated_text = response.choices[0].text.strip()
+        return generated_text
+    except Exception as e:
+        print(f"An error occurred while calling the OpenAI API: {e}")
+        return "We encountered an error while generating a response to your query."
+
+# Example usage (Remember to replace 'your_openai_api_key' with your actual OpenAI API key)
+# videos = [VideoPresentation(path="video1.mp4", transcript="Transcript 1", summary="Summary 1"), VideoPresentation(path="video2.mp4", transcript="Transcript 2", summary="Summary 2")]
+# response = generate_response_for_retrieval("Query about videos", videos, "your_openai_api_key")
+# print(response)
 
 def query(q: str) -> QueryResponse:
     """Retrieve related trending videos and generate a response to the user's query."""
