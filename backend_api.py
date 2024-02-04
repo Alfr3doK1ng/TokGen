@@ -12,11 +12,13 @@ from utils.data_generation import capture_featured_frames, summarize
 from utils.retrieval_storage import LlamaIndexQdrantStorage
 from typedefs import VideoStorage, VideoPresentation, QueryResponse
 from openai import OpenAI
+import streamlit as st
 
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
+print(openai_api_key)
 client = OpenAI(api_key=openai_api_key)
 
 
@@ -49,7 +51,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         "keyword": q,
         "sortType": 0,
         "publishTime": "ALL_TIME",
-        "limit": 20,
+        "limit": 3,
         "proxyConfiguration": {
             "useApifyProxy": False
         }
@@ -115,6 +117,7 @@ def parse_video_representation(video: VideoStorage) -> None:
 
 def retrieve_videos_by_similarity(q: str, videos: List[VideoPresentation], top_k: int) -> List[VideoPresentation]:
     """Retrieve videos from the database that are similar to the user's query."""
+    # import pdb; pdb.set_trace()
     store = LlamaIndexQdrantStorage("data_store", videos)
     retrieved_videos = store.retrieve(q, top_k=top_k)
     return retrieved_videos
@@ -162,7 +165,8 @@ def query(q: str) -> QueryResponse:
             print(f"Failed to parse video: {video}")
             print(e)
     # retrieve more fine-grained results on the trending videos
-    retrived_videos = retrieve_videos_by_similarity(q, video_reprs, top_k=10)
+    retrived_videos = retrieve_videos_by_similarity(q, video_reprs, top_k=2)
     # generate a response to the user's query
     response = generate_response_for_retrieval(q, retrived_videos)
+    st.video(retrived_videos)
     return QueryResponse(response, [v.path for v in retrived_videos])

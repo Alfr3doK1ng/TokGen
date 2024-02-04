@@ -14,6 +14,7 @@ from llama_index.output_parsers import PydanticOutputParser
 
 from llama_index import SimpleDirectoryReader
 from llama_index.llms import Gemini
+import streamlit as st
 
 
 
@@ -119,7 +120,7 @@ def loading_fetching(output_folder):
 def summarize(parsed_results):
     results_str = ', '.join(str(obj) for obj in parsed_results)
     resp = Gemini().complete(results_str+"Above are the contents of a video broken down into equal time frames. I want the story of the video.")
-    print(resp)
+    st.write()    
     results.clear()
     return resp.text
 

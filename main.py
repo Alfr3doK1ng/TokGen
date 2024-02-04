@@ -1,5 +1,6 @@
 import streamlit as st
 import backend_api as api
+from backend_api import query
 
 APP_MESSAGES_KEY = "app_messages"
 
@@ -24,10 +25,8 @@ def homepage():
         st.markdown("""
             ## 🌟 Your AI Content Genie 🌟
             **TokGen** is here to revolutionize your TikTok presence!
-            Dive into the world of endless creativity with our AI-powered
-            assistant designed to elevate your content game to the next level."
-            with "I'm here to revolutionize your TikTok presence! Save time and
-            boost user engagement by elevating your content game!.""" , unsafe_allow_html=True)
+            I'm here to revolutionize your TikTok presence! Save time and
+            boost user engagement by elevating your content game!""" , unsafe_allow_html=True)
     st.markdown("""
         ### Why TokGen?
         - **Trend Tracker**: Stay ahead of the curve by discovering the latest trends tailored to your niche.
@@ -38,7 +37,7 @@ def homepage():
     
     # Enhance the "Get Started" button with some styling
     if st.button("✨ Get Started ✨", key="get_started"):
-        st.session_state.page = "ask_question"
+        st.session_state.page = "testing"
         st.rerun()
 
     st.markdown("---")
@@ -76,7 +75,7 @@ def ask_question_page():
         st.image("logo.png", width=100)  # Adjust the width as needed
     with col2:
         st.title("TokGen")
-    st.write("Hey there, TikTok star! Let's get your content to the next level.")
+    st.write("Tell me your niche (sports, dance, comedy, fashion, etc).")
     display_chat_history()
     with st.sidebar:
         st.header("Ask a Question")
@@ -101,13 +100,69 @@ def ask_question_page():
     if st.button("Back to Home"):
         st.session_state.page = "home"
         st.rerun()
+        
+def testing():
+    st.set_page_config(
+        page_title="Chat with TokGen",
+        page_icon="🎵",
+        layout="centered",
+        initial_sidebar_state="auto",
+        menu_items=None,
+    )
+
+    st.title("Chat with Tokgen💬🎵")
+
+    # Initialize messages in session state if not present
+    if "messages" not in st.session_state.keys():
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": "Ask me a question regarding latest TikTok videos?",
+            }
+        ]
+
+    # Handling user input
+    if prompt := st.chat_input("Your question"):
+        # Append the user's question to the messages to display it
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Display all messages including the user's recent question
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+
+        # Show a spinner while processing the query
+        with st.spinner("Fetching..."):
+            # Call query() function and get response
+            response = query(prompt)
+            print("RESPONSE!!!")
+            print(response.response)
+            # Append the response to the messages as assistant's feedback
+            st.session_state.messages.append({"role": "assistant", "content": response.response})
+            print(response.related_videos)
+            # if hasattr(response, 'video_paths'):
+            #     for video_path in response.video_paths:
+            #         if video_path:
+            #             # Display each video
+            #             st.video(video_path)
+
+            st.rerun()
+
+    else:
+        # Display messages if no new user input
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+
+
+
 
 def main():
     streamlit_init()
     if st.session_state.page == "home":
         homepage()
-    elif st.session_state.page == "ask_question":
-        ask_question_page()
+    elif st.session_state.page == "testing":
+        testing()
 
 if __name__ == "__main__":
     main()
