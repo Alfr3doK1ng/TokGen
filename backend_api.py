@@ -8,50 +8,19 @@ import tempfile
 from utils.audio import extract_audio_from_video, transcribe_audio
 import requests
 from pathlib import Path
-from data_generation import capture_featured_frames, summarize
+from utils.data_generation import capture_featured_frames, summarize
+from utils.retrieval_storage import LlamaIndexQdrantStorage
+from typedefs import VideoStorage, VideoPresentation, QueryResponse
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
-@dataclass
-class VideoStorage:
-    # attributes such as path, title, description, views, etc. Should
-    # be easily obtained from the tiktok API results
-    title: str
-    path: str
-    url: str
-    view: int
-    # digg_count: int
-    collect_count: int
-    comment_count: int
-    digg_count: int
-    download_count: int
-    forward_count: int
-    lose_comment_count: int
-    lose_count: int
-    play_count: int
-    share_count: int
-    whatsapp_share_count: int
-
-
-@dataclass
-class VideoPresentation:
-    # simple attributes
-    path: str
-    # attributes from the parse, such as captions, transciptions, storyline summary, etc
-    transcript: str
-    summary: str
-
-@dataclass
-class QueryResponse:
-    response: str
-    related_videos: List[str]
 
 def download_video(url, title, save_path):
     """Download a video from a URL using the video's caption as the filename."""
     # Sanitize the title to use as a filename
-    filename = title.replace(" ", "_") + ".mp4"
+    filename = title.replace(" ", "_").replace('&', '_') + ".mp4"
     full_path = Path(save_path) / filename
 
     # Ensure the save_path directory exists
@@ -129,19 +98,18 @@ def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresent
     summary = summarize()
 
     return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
-    pass
 
-def store_video_representation(video: VideoStorage) -> None:
-    """Parse video representation and store it in the database."""
+def parse_video_representation(video: VideoStorage) -> None:
+    """Parse video representation."""
     transcription = parse_video_transcription(video)
     video_presentation = parse_video_summary(video, transcription)
-    # store the video_presentation in the database
-    
-    pass
+    return video_presentation
 
-def retrieve_videos_by_similarity(q: str) -> List[VideoPresentation]:
+def retrieve_videos_by_similarity(q: str, videos: List[VideoPresentation], top_k: int) -> List[VideoPresentation]:
     """Retrieve videos from the database that are similar to the user's query."""
-    return []
+    store = LlamaIndexQdrantStorage("data_store", videos)
+    retrieved_videos = store.retrieve(q, top_k=top_k)
+    return retrieved_videos
 
 def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> str:
     """Generate a response to the user's query based on the retrieved videos."""
@@ -153,10 +121,9 @@ def query(q: str) -> QueryResponse:
     # search for the hottest videos related to the query on tiktok
     videos = search_tiktok_trending_videos(q)
     # parse and store the videos as objects in the database
-    for video in videos:
-        store_video_representation(video)
+    video_reprs = [parse_video_representation(video) for video in videos]
     # retrieve more fine-grained results on the trending videos
-    retrived_videos = retrieve_videos_by_similarity(q)
+    retrived_videos = retrieve_videos_by_similarity(q, video_reprs)
     # generate a response to the user's query
     response = generate_response_for_retrieval(q, retrived_videos)
     return QueryResponse(response, [v.path for v in retrived_videos])

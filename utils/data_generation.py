@@ -1,6 +1,5 @@
 import cv2
 import os
-import numpy as np
 import tempfile
 
 import os
@@ -8,10 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from pydantic import BaseModel
-from PIL import Image
-import matplotlib.pyplot as plt
-
-import google.generativeai as genai
 
 from llama_index.multi_modal_llms import GeminiMultiModal
 from llama_index.program import MultiModalLLMCompletionProgram
