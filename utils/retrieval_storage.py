@@ -76,6 +76,7 @@ class LlamaIndexQdrantStorage:
             num_queries=top_k,
             use_async=False,
             verbose=True)
+        # import pdb; pdb.set_trace()
         results = retriever.retrieve(q)
         output = []
         path_set = set()  # this is for deduplication
@@ -91,4 +92,5 @@ class LlamaIndexQdrantStorage:
                     summary=summary, 
                     transcript=transcript, 
                     path=path))
+            path_set.add(path)
         return output[:top_k]
