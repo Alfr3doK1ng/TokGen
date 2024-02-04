@@ -1,3 +1,4 @@
+import json
 from typing import List
 from dotenv import load_dotenv
 import os
@@ -147,25 +148,80 @@ def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> 
     except Exception as e:
         print(f"An error occurred while calling the OpenAI API: {e}")
         return "We encountered an error while generating a response to your query."
+    
+def generate_qa_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> str:
+    """Generate a answer to the user's query based on the retrieved videos."""
+    input_text = f"Imagine you are a consultant, you are giving the tiktok \
+        content creaters ideas about trending tiktok videos. Here are some current trending\
+        video summaries. The content creator has this question: {q}.\
+        Based on these summary and the need from content creator, answer their question about trends. Details are welcomed."
+        
+    input_text += "\n".join([f"- {video.summary}" for video in videos])
+    
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. You will help to prepare new ideas for the content creators."},
+                {"role": "user", "content": input_text}
+            ],
+            model="gpt-3.5-turbo-0125")
+        generated_text = response.choices[0].message.content.strip()
+        return generated_text
+    except Exception as e:
+        print(f"An error occurred while calling the OpenAI API: {e}")
+        return "We encountered an error while generating a response to your query."
 
-def query(q: str, progress_bar = None) -> QueryResponse:
+def check_query_type(q: str) -> str:
+    """Check the type of query."""
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. You will help to prepare new ideas for the content creators."},
+                {"role": "user", "content": f"Please help me to analyze the user intend of the following query. The query is: {q}" \
+                    "Is this an request to generate a script for a video or a question about a video? " \
+                    "If it is an request to generate a script, return 'script' for intend. "
+                    "Return the result in JSON format: {'intend': 'script' or 'question'}."}
+            ],
+            model="gpt-3.5-turbo-0125",
+            response_format={ "type": "json_object" })
+        data = json.loads(response.choices[0].message.content)
+        return data['intend']
+    except Exception as e:
+        print(f"An error occurred while calling the OpenAI API: {e}")
+        return "We encountered an error while generating a response to your query."
+
+def query(q: str, parsed_videos: List[VideoPresentation] = None, progress_bar = None) -> QueryResponse:
     """Retrieve related trending videos and generate a response to the user's query."""
     # search for the hottest videos related to the query on tiktok
     videos = search_tiktok_trending_videos(q)
-    progress_bar.progress(25)
+    if progress_bar:
+        progress_bar.progress(25)
     # parse and store the videos as objects in the database
-    video_reprs = []
-    for video in videos:
-        try:
-            video_reprs.append(parse_video_representation(video))
-        except Exception as e:
-            print(f"Failed to parse video: {video}")
-            print(e)
-    progress_bar.progress(50)
+    if not parsed_videos:
+        video_reprs = []
+        for video in videos:
+            try:
+                video_reprs.append(parse_video_representation(video))
+            except Exception as e:
+                print(f"Failed to parse video: {video}")
+                print(e)
+        parsed_videos = video_reprs
+    if progress_bar:
+        progress_bar.progress(50)
     # retrieve more fine-grained results on the trending videos
-    retrived_videos = retrieve_videos_by_similarity(q, video_reprs, top_k=2)
-    progress_bar.progress(75)
+    retrived_videos = retrieve_videos_by_similarity(q, parsed_videos, top_k=10)
+    if progress_bar:
+        progress_bar.progress(75)
     # generate a response to the user's query
-    response = generate_response_for_retrieval(q, retrived_videos)
-    progress_bar.progress(100)
-    return QueryResponse(response, [v.path for v in retrived_videos], [(v.title, v.url) for v in retrived_videos])
+    query_type = check_query_type(q)
+    if query_type == "script":
+        response = generate_response_for_retrieval(q, parsed_videos)
+    else:
+        response = generate_qa_response_for_retrieval(q, parsed_videos)
+    if progress_bar:
+        progress_bar.progress(100)
+    return QueryResponse(
+        response, 
+        [v.path for v in retrived_videos], 
+        [(v.title, v.url) for v in retrived_videos],
+        parsed_videos)

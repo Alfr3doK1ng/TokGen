@@ -37,3 +37,4 @@ class QueryResponse:
     response: str
     related_videos: List[str]
     reference: List[Tuple[str, str]]
+    parsed_videos: List[VideoPresentation]

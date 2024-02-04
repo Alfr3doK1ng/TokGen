@@ -125,6 +125,7 @@ def testing():
                 "content": "Ask me a question regarding latest TikTok videos?",
             }
         ]
+        st.session_state.video_store = None
 
     # Handling user input
     if prompt := st.chat_input("Your question"):
@@ -140,11 +141,17 @@ def testing():
         # Show a spinner while processing the query
         with st.spinner("Fetching..."):
             # Call query() function and get response
-            response = query(prompt, progress_bar)
+            response = query(prompt, st.session_state.video_store, progress_bar)
             print("RESPONSE!!!")
             print(response.response)
+            st.session_state.video_store = response.parsed_videos
             # Append the response to the messages as assistant's feedback
-            st.session_state.messages.append({"role": "assistant", "content": response.response, "reference": response.reference, "video": response.related_videos})
+            st.session_state.messages.append(
+                {"role": "assistant", 
+                 "content": response.response, 
+                 "reference": response.reference, 
+                 "avatar": "logo.png",
+                 "video": response.related_videos})
             print(response.related_videos)
             st.rerun()
 

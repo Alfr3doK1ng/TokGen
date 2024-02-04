@@ -31,8 +31,10 @@ class LlamaIndexQdrantStorage:
 
     def create_index(self, storage_path: str, key: str, videos: List[VideoPresentation]) -> VectorStoreIndex:
         """Create a vector store index."""
+        if os.path.exists(storage_path):
+            os.system(f"rm -rf {storage_path}")
         client = qdrant_client.QdrantClient(path=storage_path)
-        vector_store = QdrantVectorStore(client=client, collection_name="collection")
+        vector_store = QdrantVectorStore(client=client, collection_name=f"collection-{key}")
         embed_model = GeminiEmbedding(
             model_name="models/embedding-001", api_key=GOOGLE_API_KEY
         )
