@@ -4,6 +4,10 @@ import time
 from dotenv import load_dotenv
 import os
 from apify_client import ApifyClient
+import tempfile
+from utils.audio import extract_audio_from_video, transcribe_audio
+import requests
+from pathlib import Path
 from data_generation import capture_featured_frames, summarize
 
 load_dotenv()
@@ -13,6 +17,7 @@ api_key = os.getenv('API_KEY')
 class VideoStorage:
     # attributes such as path, title, description, views, etc. Should
     # be easily obtained from the tiktok API results
+    title: str
     path: str
     url: str
     view: int
@@ -42,6 +47,24 @@ class QueryResponse:
     response: str
     related_videos: List[str]
 
+def download_video(url, title, save_path):
+    """Download a video from a URL using the video's caption as the filename."""
+    # Sanitize the title to use as a filename
+    filename = title.replace(" ", "_") + ".mp4"
+    full_path = Path(save_path) / filename
+
+    # Ensure the save_path directory exists
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(full_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    file.write(chunk)
+        print(f"Video downloaded successfully and saved to {full_path}")
+    else:
+        print(f"Failed to download video. Status code: {response.status_code}")
 
 def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
     """Use tiktok API to search for trending videos related to the query."""
@@ -63,7 +86,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
     vo = []
     for item in client.dataset(run["defaultDatasetId"]).iterate_items():
         item = item['aweme_info']
-        path = ""  # Assuming you have a specific logic to define the path
+        title = item["desc"]
         url = item["video"]["play_addr"]["url_list"][0]
         view_count = item["statistics"]["play_count"]
         digg_count = item["statistics"]["digg_count"]
@@ -76,17 +99,27 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         play_count = item["statistics"]["play_count"]
         share_count = item["statistics"]["share_count"]
         whatsapp_share_count = item["statistics"].get("whatsapp_share_count", 0)  # Assuming default 0 if not present
-
-        # Creating a VideoStorage object with extracted values
-        vo.append(VideoStorage(path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
+        try:
+            download_video(url, title, "./videos")
+            path = Path("./videos") / title
+            print(path)
+            vo.append(VideoStorage(title, path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
+        except:
+            continue    
     return vo
 
 def parse_video_transcription(video: VideoStorage) -> str:
     """Parse the video's transcription using an audio model."""
-    return "This is the transcription of the video."
+    with tempfile.TemporaryDirectory() as temp_dir:
+        audio_file = os.path.join(temp_dir, "audio.mp3")
+        # convert to audio file
+        extract_audio_from_video(video.path, audio_file)
+        # transcribe the audio
+        transcription = transcribe_audio(audio_file)
+    return transcription
 
 def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresentation:
-    """Parse the video's transcription and other attributes to generate a summary.
+    """Parse the video's keyframes and other attributes to generate a summary.
     
     This function will set the transcription attribute as well.
     """
