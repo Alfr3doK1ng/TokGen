@@ -192,13 +192,11 @@ def capture_featured_frames_no_pydantic(video_path, num_frames=5):
     return parsed_results
 
 def loading_fetching_no_pydantic(output_folder):
-
-    from pathlib import Path
     import replicate
     load_dotenv()
 
     results = []
-    image_path = Path(output_folder + 'frame.jpg')
+    image_path = os.path.join(output_folder, 'frame.jpg')
     image = open(image_path, "rb")
     output = replicate.run(
         "yorickvp/llava-v1.6-vicuna-13b:0603dec596080fa084e26f0ae6d605fc5788ed2b1a0358cd25010619487eae63",
@@ -213,6 +211,5 @@ def loading_fetching_no_pydantic(output_folder):
     response = "".join(list(output))
     print(response)
     print('=============================================')
-    results.append(response)
         
-    return results
+    return response
