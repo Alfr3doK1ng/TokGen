@@ -11,11 +11,13 @@ from pathlib import Path
 from utils.data_generation import capture_featured_frames, summarize
 from utils.retrieval_storage import LlamaIndexQdrantStorage
 from typedefs import VideoStorage, VideoPresentation, QueryResponse
-import openai
+from openai import OpenAI
+
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=openai_api_key)
 
 
 def download_video(url, title, save_path):
@@ -47,7 +49,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         "keyword": q,
         "sortType": 0,
         "publishTime": "ALL_TIME",
-        "limit": 5,
+        "limit": 20,
         "proxyConfiguration": {
             "useApifyProxy": False
         }
@@ -124,18 +126,14 @@ def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> 
         
     input_text += "\n".join([f"- {video.summary}" for video in videos])
     
-    openai.api_key = openai_api_key
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=input_text,
-            temperature=0.7,
-            max_tokens=150,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
-        )
-        generated_text = response.choices[0].text.strip()
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. You will help to generate new ideas for the content creators."},
+                {"role": "user", "content": input_text}
+            ],
+            model="gpt-3.5-turbo-0125")
+        generated_text = response.choices[0].message.content.strip()
         return generated_text
     except Exception as e:
         print(f"An error occurred while calling the OpenAI API: {e}")
@@ -151,9 +149,15 @@ def query(q: str) -> QueryResponse:
     # search for the hottest videos related to the query on tiktok
     videos = search_tiktok_trending_videos(q)
     # parse and store the videos as objects in the database
-    video_reprs = [parse_video_representation(video) for video in videos]
+    video_reprs = []
+    for video in videos:
+        try:
+            video_reprs.append(parse_video_representation(video))
+        except Exception as e:
+            print(f"Failed to parse video: {video}")
+            print(e)
     # retrieve more fine-grained results on the trending videos
-    retrived_videos = retrieve_videos_by_similarity(q, video_reprs)
+    retrived_videos = retrieve_videos_by_similarity(q, video_reprs, top_k=10)
     # generate a response to the user's query
     response = generate_response_for_retrieval(q, retrived_videos)
     return QueryResponse(response, [v.path for v in retrived_videos])
