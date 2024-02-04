@@ -10,14 +10,20 @@ import json
 class TestVideoRetrieve(unittest.TestCase):
 
     def setUp(self):
-        self.q = "trends in llamaindex or bentoml"
+        self.q = "trends in llamaindex basketball"
         self.top_k = 10
-        videos = api.search_tiktok_trending_videos(self.q)
-        try:
-            self.videos = [api.parse_video_representation(video) for video in videos]
-        except Exception as e:
-            self.videos = []
-            print(f"An error occurred: {e}")
+        # videos = api.search_tiktok_trending_videos(self.q)
+        # self.videos = []
+        # for video in videos:
+        #     try:
+        #         v = api.parse_video_representation(video)
+        #         self.videos.append(v)
+        #     except Exception as e:
+        #         print(f"Failed to parse video: {video}")
+        #         print(e)
+        # import pdb; pdb.set_trace()
+        # self.dump_videos(self.videos, "tests/videos.json")
+        self.videos = self.load_videos("tests/videos.json")
 
     def dump_videos(self, videos, filename):
         vs = []

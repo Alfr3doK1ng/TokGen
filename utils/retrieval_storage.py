@@ -31,6 +31,7 @@ class LlamaIndexQdrantStorage:
 
     def create_index(self, storage_path: str, key: str, videos: List[VideoPresentation]) -> VectorStoreIndex:
         """Create a vector store index."""
+        # import pdb; pdb.set_trace()
         client = qdrant_client.QdrantClient(path=storage_path)
         vector_store = QdrantVectorStore(client=client, collection_name="collection")
         embed_model = GeminiEmbedding(
@@ -48,12 +49,12 @@ class LlamaIndexQdrantStorage:
             metadata["path"] = video.path
             metadata["transcription"] = video.transcript
             metadata["summary"] = video.summary
-            if key == "transcript":
-                text_node.text = video.transcript
-            elif key == "summary":
-                text_node.text = video.summary
-            else:
-                raise ValueError(f"Invalid key: {key}")
+            # if key == "transcript":
+            #     text_node.text = video.transcript
+            # elif key == "summary":
+            #     text_node.text = video.summary
+            # else:
+            #     raise ValueError(f"Invalid key: {key}")
             text_node.metadata = metadata
             nodes.append(text_node)
 
@@ -68,8 +69,8 @@ class LlamaIndexQdrantStorage:
         """Retrieve data from the storage section with the given id that are similar to the user's query."""
         retriever = QueryFusionRetriever(
             retrievers=[
-                self.index_transcript.as_retriever(),
-                self.index_summary.as_retriever(),
+                self.index_transcript.as_retriever(similarity_top_k=top_k),
+                self.index_summary.as_retriever(similarity_top_k=top_k),
             ],
             similarity_top_k=top_k*10,
             num_queries=top_k,
