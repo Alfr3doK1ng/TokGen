@@ -24,6 +24,7 @@ class TestVideoRetrieve(unittest.TestCase):
         # import pdb; pdb.set_trace()
         # self.dump_videos(self.videos, "tests/videos.json")
         self.videos = self.load_videos("tests/videos.json")
+        print(f"Loaded {len(self.videos)} videos")
 
     def dump_videos(self, videos, filename):
         vs = []
