@@ -112,10 +112,10 @@ def testing():
 
 
     st.title("Chat with TokGen 💬🎵")
-    st.write("Tell me your niche (sports, dance, comedy, fashion, etc).")
-    if st.button("Back to Home"):
-        st.session_state.page = "home"
-        st.rerun()
+    # st.write("Tell me your niche (sports, dance, comedy, fashion, etc).")
+    # if st.button("Back to Home"):
+    #     st.session_state.page = "home"
+    #     st.rerun()
 
     # Initialize messages in session state if not present
     if "messages" not in st.session_state.keys():
@@ -123,7 +123,7 @@ def testing():
             {
                 "role": "TokGen",
                 "avatar": "logo.png",
-                "content": "Ask me a question regarding latest TikTok videos?",
+                "content": "Ask me a question regarding TikTok videos in your area of interest",
             }
         ]
         st.session_state.video_store = None
