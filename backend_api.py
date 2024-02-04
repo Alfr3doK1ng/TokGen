@@ -1,6 +1,4 @@
-from dataclasses import dataclass
 from typing import List
-import time
 from dotenv import load_dotenv
 import os
 from apify_client import ApifyClient
