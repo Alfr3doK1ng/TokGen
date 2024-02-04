@@ -1,7 +1,9 @@
 from moviepy.editor import *
 from openai import OpenAI
 import json
+from dotenv import load_dotenv
 
+load_dotenv()
 client = OpenAI()
 
 def extract_audio_from_video(video_path, output_audio_path):

@@ -11,6 +11,7 @@ from pathlib import Path
 
 load_dotenv()
 api_key = os.getenv('API_KEY')
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
 @dataclass
 class VideoStorage:
@@ -63,6 +64,7 @@ def download_video(url, title, save_path):
         print(f"Video downloaded successfully and saved to {full_path}")
     else:
         print(f"Failed to download video. Status code: {response.status_code}")
+    return full_path
 
 def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
     """Use tiktok API to search for trending videos related to the query."""
@@ -73,7 +75,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         "keyword": q,
         "sortType": 0,
         "publishTime": "ALL_TIME",
-        "limit": 20,
+        "limit": 2,
         "proxyConfiguration": {
             "useApifyProxy": False
         }
@@ -98,8 +100,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         share_count = item["statistics"]["share_count"]
         whatsapp_share_count = item["statistics"].get("whatsapp_share_count", 0)  # Assuming default 0 if not present
         try:
-            download_video(url, title, "./videos")
-            path = Path("./videos") / title
+            path = str(download_video(url, title, "./videos"))
             print(path)
             vo.append(VideoStorage(title, path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
         except:
