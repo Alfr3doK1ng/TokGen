@@ -8,7 +8,7 @@ import backend_api as api
 class TestBackendAPI(unittest.TestCase):
 
     def testQueryAPI(self):
-        q = "trends in llamaindex or datastax"
+        q = "trends in llamaindex and education and funs"
         resp = api.query(q)
         self.assertTrue(len(resp.related_videos) > 0)
         self.assertTrue(len(resp.response))

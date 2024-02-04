@@ -40,6 +40,7 @@ def capture_featured_frames(video_path, num_frames=5):
     interval = total_frames // num_frames
     
     # Loop through the specified number of frames
+    parsed_results = []
     for i in range(num_frames):
         # Calculate the frame number to capture
         frame_number = int(i * interval)
@@ -60,10 +61,12 @@ def capture_featured_frames(video_path, num_frames=5):
             file = os.path.join(temp_dir, "frame.jpg")
             cv2.imwrite(file, frame)
             print(f"Featured frame {i+1} saved to {file}")
-            loading_fetching(output_folder=temp_dir)
+            results = loading_fetching(output_folder=temp_dir)
+            parsed_results.append(results)
     
     # Release the video capture object
     cap.release()
+    return parsed_results
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
 
@@ -94,24 +97,33 @@ def pydantic_gemini(
     return response
 
 def loading_fetching(output_folder):
+
+    results = []
     google_image_documents = SimpleDirectoryReader(
         output_folder
     ).load_data()
 
     for img_doc in google_image_documents:
-        pydantic_response = pydantic_gemini(
-            "models/gemini-pro-vision",
-            TickTokVids,
-            [img_doc],
-            prompt,
-        )
-        for r in pydantic_response:
-            print(r)
-        results.append(pydantic_response)
+        try:
+            pydantic_response = pydantic_gemini(
+                "models/gemini-pro-vision",
+                TickTokVids,
+                [img_doc],
+                prompt,
+            )
+            for r in pydantic_response:
+                print(r)
+            results.append(pydantic_response)
+        except Exception as e:
+            print(f"Error: {e}")
+            results.append("Error: Unable to process the image.")
+        
+    return results
 
-def summarize():
-    results_str = ', '.join(str(obj) for obj in results)
+def summarize(parsed_results):
+    results_str = ', '.join(str(obj) for obj in parsed_results)
     resp = Gemini().complete(results_str+"Above are the contents of a video broken down into equal time frames. I want the story of the video.")
     print(resp)
+    results.clear()
     return resp.text
 
