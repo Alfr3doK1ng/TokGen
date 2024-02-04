@@ -47,7 +47,7 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
         "keyword": q,
         "sortType": 0,
         "publishTime": "ALL_TIME",
-        "limit": 2,
+        "limit": 5,
         "proxyConfiguration": {
             "useApifyProxy": False
         }
