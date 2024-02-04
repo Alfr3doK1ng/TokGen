@@ -6,7 +6,7 @@ import tempfile
 from utils.audio import extract_audio_from_video, transcribe_audio
 import requests
 from pathlib import Path
-from utils.data_generation import capture_featured_frames, summarize
+from utils.data_generation import capture_featured_frames, summarize, summarize_no_pydantic, capture_featured_frames_no_pydantic
 from utils.retrieval_storage import LlamaIndexQdrantStorage
 from typedefs import VideoStorage, VideoPresentation, QueryResponse
 from openai import OpenAI
@@ -105,10 +105,24 @@ def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresent
 
     return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
 
+def parse_video_summary_with_llava(video: VideoStorage, transcription: str) -> VideoPresentation:
+    """Parse the video but this time with llava hosted on replicate."""
+    print(video.path)
+    parsed_results = capture_featured_frames_no_pydantic(video.path, num_frames=5)
+
+    try:
+        summary = summarize_no_pydantic(parsed_results)
+    except RuntimeError as e:
+        print(f"A RuntimeError occurred")
+        summary = "Error: Unable to process the video summary due to safety concerns."
+
+    return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
+
 def parse_video_representation(video: VideoStorage) -> None:
     """Parse video representation."""
     transcription = parse_video_transcription(video)
-    video_presentation = parse_video_summary(video, transcription)
+    # video_presentation = parse_video_summary(video, transcription)
+    video_presentation = parse_video_summary_with_llava(video, transcription)
     return video_presentation
 
 def retrieve_videos_by_similarity(q: str, videos: List[VideoPresentation], top_k: int) -> List[VideoPresentation]:
