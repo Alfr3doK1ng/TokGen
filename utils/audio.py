@@ -32,6 +32,7 @@ def transcribe_audio(audio_path, n_repeat: int = 2):
                 response_format="text"
             )
             print("Raw Transcription:", transcript)
+            
             transcripts.append(transcript)
     
     # clean the transcription

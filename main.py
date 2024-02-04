@@ -110,13 +110,18 @@ def testing():
         menu_items=None,
     )
 
-    st.title("Chat with Tokgen💬🎵")
+
+    st.title("Chat with TokGen 💬🎵")
+    if st.button("Back to Home"):
+        st.session_state.page = "home"
+        st.rerun()
 
     # Initialize messages in session state if not present
     if "messages" not in st.session_state.keys():
         st.session_state.messages = [
             {
-                "role": "assistant",
+                "role": "TokGen",
+                "avatar": "logo.png",
                 "content": "Ask me a question regarding latest TikTok videos?",
             }
         ]
@@ -124,28 +129,23 @@ def testing():
     # Handling user input
     if prompt := st.chat_input("Your question"):
         # Append the user's question to the messages to display it
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.messages.append({"role": "user", "avatar": "👤", "content": prompt})
 
         # Display all messages including the user's recent question
         for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
+            with st.chat_message(message["role"], avatar = message['avatar']):
                 st.write(message["content"])
 
+        progress_bar = st.progress(0)
         # Show a spinner while processing the query
         with st.spinner("Fetching..."):
             # Call query() function and get response
-            response = query(prompt)
+            response = query(prompt, progress_bar)
             print("RESPONSE!!!")
             print(response.response)
             # Append the response to the messages as assistant's feedback
-            st.session_state.messages.append({"role": "assistant", "content": response.response})
+            st.session_state.messages.append({"role": "assistant", "content": response.response, "reference": response.reference, "video": response.related_videos})
             print(response.related_videos)
-            # if hasattr(response, 'video_paths'):
-            #     for video_path in response.video_paths:
-            #         if video_path:
-            #             # Display each video
-            #             st.video(video_path)
-
             st.rerun()
 
     else:
@@ -153,9 +153,18 @@ def testing():
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.write(message["content"])
-
-
-
+                if 'reference' in message:
+                    for video_reference in (message['reference']):
+                        st.write(f"**Reference: **[{video_reference[0]}]({video_reference[1]})")
+                if 'video' in message:
+                    for video_path in (message['video']):
+                        if video_path:
+                            # Display each video
+                            print(video_path)
+                            video_file = open(video_path, 'rb')
+                            video_bytes = video_file.read()
+                            st.video(video_bytes)
+                            video_file.close()
 
 def main():
     streamlit_init()

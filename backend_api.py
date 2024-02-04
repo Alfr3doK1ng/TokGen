@@ -44,14 +44,14 @@ def download_video(url, title, save_path):
 
 def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
     """Use tiktok API to search for trending videos related to the query."""
-        # Access the API key
+    # Access the API key
     client = ApifyClient(api_key)
     run_input = {
         "type": "SEARCH",
         "keyword": q,
         "sortType": 0,
         "publishTime": "ALL_TIME",
-        "limit": 3,
+        "limit": 1,
         "proxyConfiguration": {
             "useApifyProxy": False
         }
@@ -80,7 +80,8 @@ def search_tiktok_trending_videos(q: str) -> List[VideoStorage]:
             print(path)
             vo.append(VideoStorage(title, path, url, view_count, digg_count, collect_count, comment_count, download_count, forward_count, lose_comment_count, lose_count, play_count, share_count, whatsapp_share_count))
         except:
-            continue    
+            continue
+    st.write(f'Video downloaded and processed successfully.')    
     return vo
 
 def parse_video_transcription(video: VideoStorage) -> str:
@@ -91,6 +92,7 @@ def parse_video_transcription(video: VideoStorage) -> str:
         extract_audio_from_video(video.path, audio_file)
         # transcribe the audio
         transcription = transcribe_audio(audio_file)
+        st.write(f"**Researching on** [{video.title}]({video.url})")
     return transcription
 
 def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresentation:
@@ -107,7 +109,8 @@ def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresent
         print(f"A RuntimeError occurred")
         summary = "Error: Unable to process the video summary due to safety concerns."
 
-    return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
+    return VideoPresentation(summary=summary, transcript=transcription, path=video.path,\
+                             title = video.title, url = video.url)
 
 def parse_video_representation(video: VideoStorage) -> None:
     """Parse video representation."""
@@ -147,15 +150,11 @@ def generate_response_for_retrieval(q: str, videos: List[VideoPresentation]) -> 
         print(f"An error occurred while calling the OpenAI API: {e}")
         return "We encountered an error while generating a response to your query."
 
-# Example usage (Remember to replace 'your_openai_api_key' with your actual OpenAI API key)
-# videos = [VideoPresentation(path="video1.mp4", transcript="Transcript 1", summary="Summary 1"), VideoPresentation(path="video2.mp4", transcript="Transcript 2", summary="Summary 2")]
-# response = generate_response_for_retrieval("Query about videos", videos, "your_openai_api_key")
-# print(response)
-
-def query(q: str) -> QueryResponse:
+def query(q: str, progress_bar = None) -> QueryResponse:
     """Retrieve related trending videos and generate a response to the user's query."""
     # search for the hottest videos related to the query on tiktok
     videos = search_tiktok_trending_videos(q)
+    progress_bar.progress(25)
     # parse and store the videos as objects in the database
     video_reprs = []
     for video in videos:
@@ -164,9 +163,11 @@ def query(q: str) -> QueryResponse:
         except Exception as e:
             print(f"Failed to parse video: {video}")
             print(e)
+    progress_bar.progress(50)
     # retrieve more fine-grained results on the trending videos
     retrived_videos = retrieve_videos_by_similarity(q, video_reprs, top_k=2)
+    progress_bar.progress(75)
     # generate a response to the user's query
     response = generate_response_for_retrieval(q, retrived_videos)
-    st.video(retrived_videos)
-    return QueryResponse(response, [v.path for v in retrived_videos])
+    progress_bar.progress(100)
+    return QueryResponse(response, [v.path for v in retrived_videos], [(v.title, v.url) for v in retrived_videos])

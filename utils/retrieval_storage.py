@@ -31,7 +31,6 @@ class LlamaIndexQdrantStorage:
 
     def create_index(self, storage_path: str, key: str, videos: List[VideoPresentation]) -> VectorStoreIndex:
         """Create a vector store index."""
-        # import pdb; pdb.set_trace()
         client = qdrant_client.QdrantClient(path=storage_path)
         vector_store = QdrantVectorStore(client=client, collection_name="collection")
         embed_model = GeminiEmbedding(
@@ -49,6 +48,8 @@ class LlamaIndexQdrantStorage:
             metadata["path"] = video.path
             metadata["transcription"] = video.transcript
             metadata["summary"] = video.summary
+            metadata['title'] = video.title
+            metadata['url'] = video.url
             # if key == "transcript":
             #     text_node.text = video.transcript
             # elif key == "summary":
@@ -90,5 +91,7 @@ class LlamaIndexQdrantStorage:
                 VideoPresentation(
                     summary=summary, 
                     transcript=transcript, 
-                    path=path))
+                    path=path,
+                    title = metadata['title'],
+                    url = metadata['url']))
         return output[:top_k]

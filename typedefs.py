@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 @dataclass
 class VideoStorage:
@@ -29,8 +29,11 @@ class VideoPresentation:
     # attributes from the parse, such as captions, transciptions, storyline summary, etc
     transcript: str
     summary: str
+    title: str
+    url: str
 
 @dataclass
 class QueryResponse:
     response: str
     related_videos: List[str]
+    reference: List[Tuple[str, str]]
