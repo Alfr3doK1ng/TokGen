@@ -95,8 +95,13 @@ def parse_video_summary(video: VideoStorage, transcription: str) -> VideoPresent
     This function will set the transcription attribute as well.
     """
     print(video.path)
-    capture_featured_frames(video.path, num_frames=5)
-    summary = summarize()
+    parsed_results = capture_featured_frames(video.path, num_frames=5)
+
+    try:
+        summary = summarize(parsed_results)
+    except RuntimeError as e:
+        print(f"A RuntimeError occurred")
+        summary = "Error: Unable to process the video summary due to safety concerns."
 
     return VideoPresentation(summary=summary, transcript=transcription, path=video.path)
 
