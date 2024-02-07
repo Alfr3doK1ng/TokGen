@@ -1,4 +1,6 @@
 # TokGen
+Check our Devpost page for detailed illustration and video demo!
+https://arc.net/l/quote/uwwoimxx
 
 ## How to run this
 
